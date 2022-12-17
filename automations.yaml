@@ -1,0 +1,40 @@
+- id: '1668776456872'
+  alias: Painel Lavanderia ON - Boiler ON - Botao01
+  description: Liga o Boiler quando o Botao01 do Painel Lavanderia estiver ON
+  trigger:
+  - platform: device
+    type: turned_on
+    device_id: baccacc85a66d5af32fc8b64503006d2
+    entity_id: switch.sonoff_100148a778_1
+    domain: switch
+  condition:
+  - condition: state
+    entity_id: switch.sonoff_100139239d
+    state: 'off'
+  action:
+  - type: turn_on
+    device_id: aa49d09743160c36435f7becfce78bd6
+    entity_id: switch.sonoff_100139239d
+    domain: switch
+  mode: single
+- id: '1668776592727'
+  alias: Painel Lavanderia OFF Boiler OFF - Botao01
+  description: 'Desliga o Boiler quando o Botao01 do Painel Lavanderia estiver OFF'
+  trigger:
+  - platform: device
+    type: turned_off
+    device_id: baccacc85a66d5af32fc8b64503006d2
+    entity_id: switch.sonoff_100148a778_1
+    domain: switch
+  condition:
+  - condition: device
+    type: is_on
+    device_id: aa49d09743160c36435f7becfce78bd6
+    entity_id: switch.sonoff_100139239d
+    domain: switch
+  action:
+  - type: turn_off
+    device_id: aa49d09743160c36435f7becfce78bd6
+    entity_id: switch.sonoff_100139239d
+    domain: switch
+  mode: single
