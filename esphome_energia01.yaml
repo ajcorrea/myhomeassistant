@@ -1,0 +1,97 @@
+substitutions:
+  hostname: 'energia01'
+  
+esphome:
+  name: $hostname
+  on_boot:
+    priority: 200  
+    then:
+      - wait_until:  
+          condition:
+            wifi.connected: 
+          timeout: 5s
+
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "<secret>"
+
+ota:
+  password: "<secret>"
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none
+  reboot_timeout: 15min
+  ap:
+    ssid: "{hostname} Fallback"
+    password: "{hostname}"
+
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      id: ${hostname}_IP
+      name: ${hostname} Endereço IP
+      icon: mdi:ip-network
+    ssid:
+      id: ${hostname}_SSID
+      name: ${hostname} Rede Wifi
+      icon: mdi:wifi
+  - platform: version
+    id: ${hostname}_versao
+    name: ${hostname} Versão
+    icon: mdi:information
+
+switch:
+  - platform: restart
+    id: ${hostname}_restart
+    name: ${hostname} Reiniciar
+    icon: mdi:restart
+
+sensor:
+  - platform: wifi_signal
+    id: ${hostname}_wifi_sinal
+    name: ${hostname} Intensidade Wifi
+    icon: mdi:signal
+    update_interval: 60s
+
+  - platform: uptime
+    id: ${hostname}_uptime
+    update_interval: 1s
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    internal: True
+    icon: mdi:clock-check-outline
+
+    #SCT013 100A/50mA
+  - platform: adc
+    pin: A0
+    id: ${hostname}_pin_a0
+    update_interval: 10s
+
+    #SCT013 100A/50mA
+  - platform: ct_clamp
+    sensor: ${hostname}_pin_a0
+    name: "${hostname} A0 Corrente"
+    id: ${hostname}_a0_corrente
+    update_interval: 10s
+    icon: mdi:lightning-bolt-circle
+    filters:
+      - calibrate_linear:
+        - 0.00 -> 0.00
+        - 0.316 -> 13.0 #0.316V equivalem a 13A
