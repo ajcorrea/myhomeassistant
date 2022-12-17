@@ -1,0 +1,125 @@
+substitutions:
+  hostname: 'shield01'
+
+esphome:
+  name: $hostname
+  #Hack para resolver bug NODE com I2C OLED.
+  on_boot:
+    priority: 200  
+    then:
+      - wait_until:  
+          condition:
+            wifi.connected: 
+          timeout: 5s
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "<secret>"
+
+ota:
+  password: "<secret>"
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none
+  reboot_timeout: 15min
+  ap:
+    ssid: "{hostname} Fallback"
+    password: "{hostname}"
+
+#web_server:
+#  local: true
+#  port: 80
+#  auth:
+#    username: !secret webserver_username
+#    password: !secret webserver_password
+#  version: 2
+
+font:
+  - file: "gfonts://Open Sans"
+    id: opensans
+    size: 14
+  - file: "gfonts://Roboto"
+    id: roboto
+    size: 14
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      id: ${hostname}_IP
+      name: ${hostname} Endereço IP
+      icon: mdi:ip-network
+    ssid:
+      id: ${hostname}_SSID
+      name: ${hostname} Rede Wifi
+      icon: mdi:wifi
+  - platform: version
+    id: ${hostname}_versao
+    name: ${hostname} Versão
+    icon: mdi:information
+
+switch:
+  - platform: restart
+    id: ${hostname}_restart
+    name: ${hostname} Reiniciar
+    icon: mdi:restart
+
+sensor:
+  - platform: wifi_signal
+    id: ${hostname}_wifi_sinal
+    name: ${hostname} Intensidade Wifi
+    icon: mdi:signal
+    update_interval: 60s
+
+  - platform: uptime
+    id: ${hostname}_uptime
+#    name: ${hostname} Uptime
+    update_interval: 1s
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    internal: True
+    icon: mdi:clock-check-outline
+
+
+
+############################################### I2C DISPLAY #########################################################
+i2c:
+  - id: oled
+    sda: D5
+    scl: D4
+    scan: true
+    #Hack para BUG NODE com I2C OLED
+    frequency: 800khz
+
+display:
+  - platform: ssd1306_i2c
+    model: "SH1106 128x64"
+    address: 0x3C
+    id: oled_display
+    update_interval: 1s
+    pages: 
+      - id: page1 
+        lambda: |-
+         it.printf(0, 0, id(opensans), "Wi-Fi: %.1f", id(${hostname}_wifi_sinal).state);
+         it.printf(0, 26, id(roboto),  "Uptime: %us", int(id(${hostname}_uptime).state));        
+         it.printf(0, 40, id(roboto),  "Ip: %s", id(${hostname}_IP).state.c_str());
+
+interval:
+  - interval: 1s
+    then:
+      - display.page.show_next: oled_display
+      - component.update: oled_display        
