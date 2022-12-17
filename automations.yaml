@@ -1,3 +1,4 @@
+#NSPanel - Ativar Sonoff TH16 quando apertar botão fisico01 do NSPANEL
 - id: '1668776456872'
   alias: Painel Lavanderia ON - Boiler ON - Botao01
   description: Liga o Boiler quando o Botao01 do Painel Lavanderia estiver ON
@@ -17,6 +18,7 @@
     entity_id: switch.sonoff_100139239d
     domain: switch
   mode: single
+#NSPanel - Desativar Sonoff TH16 quando apertar botão fisico01 do NSPANEL
 - id: '1668776592727'
   alias: Painel Lavanderia OFF Boiler OFF - Botao01
   description: 'Desliga o Boiler quando o Botao01 do Painel Lavanderia estiver OFF'
