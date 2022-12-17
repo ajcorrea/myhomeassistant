@@ -1,0 +1,94 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+homeassistant:
+  # Nome do local onde o Home Assistant está sendo executado
+  name: Casa
+  #Pais do local
+  country: BR
+  # Localização necessária para calcular a hora em que o sol nasce e se põe
+  latitude: !secret lat
+  longitude: !secret long
+  # altitude acima do nível do mar em metros
+  elevation: 850
+  # sistema metrico
+  unit_system: metric
+  # Timezone
+  time_zone: America/Sao_Paulo
+  # Arquivo de customização
+  customize: !include customize.yaml
+  # autenticacao do HA
+  auth_providers:
+    - type: homeassistant
+
+# Text-to-speech
+tts:
+  - platform: google_translate
+    language: 'pt-br'
+    cache: true
+    cache_dir: /tmp/tts
+    time_memory: 300
+
+recorder:
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+camera: !include cameras.yaml
+
+frontend:
+  themes: !include_dir_merge_named themes
+  
+conversation:
+
+## device_tracker:
+
+#mqtt:
+#  broker: 192.168.0.114
+#  port: 1883
+#  client_id: home-assistant-1
+#  username: !secret mqtt_username
+#  password: !secret mqtt_password
+  
+map:
+
+sun:
+
+ffmpeg:
+
+dialogflow:
+
+stream:
+
+system_health:
+
+# integracao Solar - Huawei solar - LOCAL
+sensor:
+  - platform: huawei_solar   
+    id: huawei_solar_001
+    host: '192.168.0.26'
+    optimizers: false
+    battery: false
+    slave: 0
+    port: 502
+  - platform: huawei_solar   
+    id: huawei_solar_002
+    host: '192.168.0.71'
+    optimizers: false
+    battery: false
+    slave: 0
+    port: 502
+
+lovelace:
+  mode: storage
+  # Add yaml dashboards
+  dashboards:
+    lovelace-minimalist:
+      mode: yaml
+      title: Minimalist
+      icon: mdi:flower
+      show_in_sidebar: false
+      filename: ui_lovelace_minimalist/dashboard/ui-lovelace.yaml
+      
+      
