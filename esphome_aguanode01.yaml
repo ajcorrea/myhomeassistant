@@ -1,0 +1,144 @@
+substitutions:
+  hostname: 'aguanode01'
+
+esphome:
+  name: ${hostname}
+
+esp8266:
+  board: nodemcu
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "<secret>"
+
+ota:
+  password: "<secret>"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none
+  reboot_timeout: 15min
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${hostname} Fallback"
+    password: "${hostname}"
+
+#web_server:
+#  local: true
+#  port: 80
+#  auth:
+#    username: !secret webserver_username
+#    password: !secret webserver_password
+#  version: 2
+
+captive_portal:
+
+text_sensor:
+############################# SENSORES DEVICE ##################################
+  #Informações da conexão wifi
+  - platform: wifi_info
+    #Endereço IP
+    ip_address:
+      id: ${hostname}_IP
+      name: ${hostname} Endereço IP
+      icon: mdi:ip-network
+    #Nome da Rede
+    ssid:
+      id: ${hostname}_SSID
+      name: ${hostname} Rede Wifi
+      icon: mdi:wifi
+  #Informação da versão da compilação
+  - platform: version
+    id: ${hostname}_versao
+    name: ${hostname} Versão
+    icon: mdi:information
+
+switch:
+  #Comando reinicilizar esp remotamente
+  - platform: restart
+    id: ${hostname}_restart
+    name: ${hostname} Reiniciar
+    icon: mdi:restart
+
+#Sensor temperatura
+dallas:
+  - pin: GPIO2
+    update_interval: 10s
+   
+sensor:
+  #Sinal Wifi esp
+  - platform: wifi_signal
+    id: ${hostname}_wifi_sinal
+    name: ${hostname} Intensidade Wifi
+    icon: mdi:signal
+    update_interval: 60s
+  #Sensor de fluxo - FS300A G3/4 - 1-60 L/min
+  - platform: pulse_counter
+    pin: GPIO4
+    unit_of_measurement: 'L/min'
+    id: ${hostname}_water_usage
+    name: '${hostname} Consumo Atual de Água'
+    update_interval: 5s
+    device_class: water 
+    filters:
+      - lambda: return (x / 396); # 396 = 6,6 * 60
+
+  - platform: integration
+    name: "${hostname} Consumo Total de Água"
+    unit_of_measurement: 'L'
+    sensor: ${hostname}_water_usage
+    time_unit: min
+    device_class: water 
+
+  - platform: integration
+    name: "${hostname} Consumo Total de Água M³"
+    unit_of_measurement: 'm³'
+    sensor: ${hostname}_water_usage
+    time_unit: min
+    device_class: water 
+    filters:
+      - lambda: return (x / 1000); 
+  #Sensor temporatura
+  - platform: dallas                 
+    address: 0xdf3cc7f648975228
+    name: "${hostname} Temperatura da Água da Caixa 01"
+    id: ${hostname}_temperatura_agua_caixa01
+  #sensor distancia - medindo nivel caixa d´agua 01
+  - platform: ultrasonic
+    name: "${hostname} Nível da Água da Caixa 01"
+    id: ${hostname}_nivel_agua_caixa01
+    trigger_pin: D6
+    echo_pin: D7
+    accuracy_decimals: 6
+    update_interval: 5.0s
+    timeout: 4.0m
+    pulse_time: 20us
+    filters:
+      - filter_out: nan
+      - lambda: |-
+          static float OFFSET = 0.040;  // adjust this or set 0.0 !
+          static float y = x;
+          float MAX_DIFFERENCE = 0.5;  // adjust this!
+          static float last_value_t = NAN;
+          static int count_missed_t = 0;
+          x = x+OFFSET;
+          ESP_LOGW("sensor", "Received / Ofsset / Last_Value %.3f / %.3f / %.3f", y, x, last_value_t);
+          if (count_missed_t == 3) last_value_t = x;
+          if (isnan(last_value_t) || std::abs(x - last_value_t) < MAX_DIFFERENCE) {
+            if (count_missed_t)
+              ESP_LOGI("sensor", "New echo value %.3f", x);
+              count_missed_t = 0;              
+              return last_value_t = x;
+            } 
+            else {
+              count_missed_t += 1;
+              ESP_LOGW("sensor", "Missed echo value %.3f => %.3f, %d", last_value_t, x, count_missed_t);
+              return last_value_t;
+           }      
